@@ -1,6 +1,6 @@
 {
     "name": "Logger",
-    "version": "1.0.0",
+    "version": "0.1.0",
     "description": "Simple Logger library for ESP32 and Arduino",
     "keywords": [
         "logger"
@@ -13,7 +13,7 @@
         {
             "name": "Faruk Hannan",
             "email": "idea3d.faruk@gmail.com",
-            "url": "https://microtech.bd.com",
+            "url": "https://microtech.com.bd",
             "maintainer": true
         }
     ],
