@@ -1,0 +1,41 @@
+{
+    "name": "Logger",
+    "version": "1.0.0",
+    "description": "Simple Logger library for ESP32 and Arduino",
+    "keywords": [
+        "logger"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/fahara02/Logger.git"
+    },
+    "authors": [
+        {
+            "name": "Faruk Hannan",
+            "email": "idea3d.faruk@gmail.com",
+            "url": "https://microtech.bd.com",
+            "maintainer": true
+        }
+    ],
+    "license": "MIT",
+    "frameworks": [
+        "arduino",
+        "espidf"
+    ],
+    "platforms": [
+        "espressif32"
+    ],
+    "export": {
+        "exclude": [
+            "test",
+            "docs",
+            "extras"
+        ]
+    },
+    "headers": [
+        "Logger.hpp"
+    ],
+    "build": {
+        "libLDFMode": "deep+"
+    }
+}

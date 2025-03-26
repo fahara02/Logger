@@ -1,0 +1,33 @@
+# Syntax Highlighting for Logger Library
+
+#######################################
+# Syntax Coloring Map For Logger
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+Logger	KEYWORD1
+Level	KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+
+DEBUG	KEYWORD2
+TEST	KEYWORD2
+INFO	KEYWORD2
+SUCCESS	KEYWORD2
+WARNING	KEYWORD2
+ERROR	KEYWORD2
+ENABLE	KEYWORD2
+DISABLE	KEYWORD2
+BLOCK_TAG	KEYWORD2
+UNBLOCK_TAG	KEYWORD2
+ENABLE_TIMESTAMPS	KEYWORD2
+DISABLE_TIMESTAMPS	KEYWORD2
+
+#######################################
+# Constants (LITERAL1)
+#######################################
