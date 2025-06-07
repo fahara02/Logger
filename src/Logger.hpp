@@ -47,10 +47,18 @@ public:
   void setOutputCallback(OutputCallback cb) { outputCallback_ = cb; }
   OutputCallback getOutputCallback() const { return outputCallback_; }
 
+  // Timestamp callback: returns milliseconds (user must provide for MCU/PC agnosticism)
+  using TimestampCallback = unsigned long (*)();
+  void setTimestampCallback(TimestampCallback cb) { timestampCallback_ = cb; }
+  TimestampCallback getTimestampCallback() const { return timestampCallback_; }
 
-static inline void SETUP(OutputCallback cb) {
-  Logger::getInstance().setOutputCallback(cb);
-}
+  static inline void SETUP(OutputCallback cb) {
+    Logger::getInstance().setOutputCallback(cb);
+  }
+  // Wrapper for timestamp callback setup
+  static inline void SETUP_TIMESTAMP(TimestampCallback cb) {
+    Logger::getInstance().setTimestampCallback(cb);
+  }
 
 
   // Core logging method
@@ -110,7 +118,9 @@ private:
           "\033[1;32m", // SUCCESS: bright green
           "\033[1;33m", // WARNING: bright yellow
           "\033[1;31m"  // ERROR: bright red
-        } {
+        },
+        timestampCallback_(nullptr)
+  {
     enabledLevels_.set(); // Enable all levels by default
   }
 
@@ -131,6 +141,8 @@ private:
 
   // Output callback for all logs
   OutputCallback outputCallback_ = nullptr;
+  // Timestamp callback for MCU/PC agnosticism
+  TimestampCallback timestampCallback_ = nullptr;
   // REPORT mode support
   bool reportEnabled_;
   LogReportCallback reportCallback_ = nullptr;
@@ -144,7 +156,8 @@ private:
     char logLine[LOG_BUFFER_SIZE];
     int written = 0;
     if (timestampEnabled_) {
-      written += snprintf(logLine + written, sizeof(logLine) - written, "[%lu] ", millis());
+      unsigned long now = timestampCallback_ ? timestampCallback_() : 0;
+      written += snprintf(logLine + written, sizeof(logLine) - written, "[%lu] ", now);
     }
     if (tag) {
       written += snprintf(logLine + written, sizeof(logLine) - written, "[%s] ", tag);
