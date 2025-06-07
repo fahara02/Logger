@@ -67,15 +67,14 @@ LOG::DISABLE_REPORT();
 
 **Example: Write logs to Serial (for demonstration)**
 ```cpp
-void my_writer(const char* msg) {
-  Serial.print("[REPORT] ");
+void my_serial_logger(const char* msg) {
   Serial.print(msg);
 }
 
 void setup() {
   Serial.begin(115200);
+  LOG::SETUP(my_serial_logger); // All log output goes through this callback
   LOG::ENABLE();
-  LOG::ENABLE_REPORT(my_writer);
 }
 ```
 

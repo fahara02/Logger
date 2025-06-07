@@ -28,8 +28,10 @@ enum class Level {
 
 class Logger {
 public:
-  using LogCallback =
-      std::function<void(const char *tag, Level level, const char *message)>;
+  // Output callback: receives a null-terminated log line (with newline)
+  using OutputCallback = void(*)(const char* message);
+  // Report/file logging callback: also receives a null-terminated log line
+  using LogReportCallback = void(*)(const char* message);
 
   // Singleton access
   static Logger &getInstance() {
@@ -40,6 +42,16 @@ public:
   // Enable/disable logging
   void enable() { enabled_ = true; }
   void disable() { enabled_ = false; }
+
+  // Set output callback for ALL log output
+  void setOutputCallback(OutputCallback cb) { outputCallback_ = cb; }
+  OutputCallback getOutputCallback() const { return outputCallback_; }
+
+
+static inline void SETUP(OutputCallback cb) {
+  Logger::getInstance().setOutputCallback(cb);
+}
+
 
   // Core logging method
   void vlog(const char *tag, Level level, const char *format, va_list args) {
@@ -117,10 +129,10 @@ private:
   std::unordered_set<std::string> blockedTags_;
   LogCallback logCallback_;
 
+  // Output callback for all logs
+  OutputCallback outputCallback_ = nullptr;
   // REPORT mode support
   bool reportEnabled_;
-  // User callback: receives a null-terminated log line (including newline), or nullptr if disabled
-  using LogReportCallback = void(*)(const char* message);
   LogReportCallback reportCallback_ = nullptr;
 
   // Private logging implementation
@@ -140,30 +152,14 @@ private:
     written += snprintf(logLine + written, sizeof(logLine) - written, "%s: %s\n", logLevelToString(level), messageBuffer);
     logLine[LOG_BUFFER_SIZE-1] = '\0'; // Guarantee null-termination
 
-    // MCU-agnostic file logging via callback
+    // Output to user callback (ALL logs)
+    if (outputCallback_) {
+      outputCallback_(logLine);
+    }
+
+    // MCU-agnostic file/report logging via callback (if enabled)
     if (reportEnabled_ && reportCallback_) {
       reportCallback_(logLine);
-    }
-
-    const char *colorCode;
-    if (level == Level::INFO) {
-      colorCode = infoColorToggle_ ? infoAlternateColor_
-                                   : levelColors_[static_cast<size_t>(level)];
-      infoColorToggle_ = !infoColorToggle_;
-    } else {
-      colorCode = levelColors_[static_cast<size_t>(level)];
-    }
-    const char *levelStr = logLevelToString(level);
-
-    if (tag != nullptr) {
-      Serial.printf("%s%s[%s][%s] %s\033[0m\n", colorCode, timestamp, levelStr,
-                    tag, messageBuffer);
-      if (logCallback_) {
-        logCallback_(tag, level, messageBuffer);
-      }
-    } else {
-      Serial.printf("%s%s[%s] %s\033[0m\n", colorCode, timestamp, levelStr,
-                    messageBuffer);
     }
   }
 
