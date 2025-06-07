@@ -1,15 +1,10 @@
-set(COMPONENT_SRCDIRS
-    "src" 
-)
+# MCU-agnostic Logger CMake configuration
+# Add this directory as a library target in your project
 
-set(COMPONENT_ADD_INCLUDEDIRS
-  "src" 
-)
+add_library(Logger INTERFACE)
+target_include_directories(Logger INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
-
-
-register_component()
-
-target_compile_definitions(${COMPONENT_TARGET} PUBLIC -DESP32)
-target_compile_options(${COMPONENT_TARGET} PRIVATE -fno-rtti)
+# Optionally, you can add compile options or definitions here if needed for your platform:
+# target_compile_options(Logger INTERFACE ...)
+# target_compile_definitions(Logger INTERFACE ...)
 
