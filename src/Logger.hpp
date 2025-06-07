@@ -1,5 +1,5 @@
 #pragma once
-#include "Arduino.h"
+
 #include <array>
 #include <bitset>
 #include <cstdarg>
@@ -9,9 +9,14 @@
 #include <stdarg.h>
 #include <string>
 #include <unordered_set>
+#include <cstdint>
+
 
 namespace LOG {
-static constexpr uint16_t LOG_BUFFER_SIZE = 256;
+#ifndef LOG_REPORT_BUFFER_SIZE
+#define LOG_REPORT_BUFFER_SIZE 256
+#endif
+static constexpr uint16_t LOG_BUFFER_SIZE = LOG_REPORT_BUFFER_SIZE;
 enum class Level {
   DEBUG = 0, // Lowest priority (most verbose)
   TEST = 1,
@@ -85,15 +90,20 @@ private:
   Logger()
       : enabled_(true), infoColorToggle_(false),
         infoAlternateColor_("\033[1;34m"), minimumLevel_(Level::DEBUG),
-        timestampEnabled_(false), levelColors_{
-                                      "\033[1;37m", // DEBUG: bright white
-                                      "\033[1;35m", // TEST: bright magenta
-                                      "\033[1;36m", // INFO: bright cyan
-                                      "\033[1;32m", // SUCCESS: bright green
-                                      "\033[1;33m", // WARNING: bright yellow
-                                      "\033[1;31m"  // ERROR: bright red
-                                  } {
+        timestampEnabled_(false), reportEnabled_(false), reportFilePath_("report.log"),
+        levelColors_{
+          "\033[1;37m", // DEBUG: bright white
+          "\033[1;35m", // TEST: bright magenta
+          "\033[1;36m", // INFO: bright cyan
+          "\033[1;32m", // SUCCESS: bright green
+          "\033[1;33m", // WARNING: bright yellow
+          "\033[1;31m"  // ERROR: bright red
+        } {
     enabledLevels_.set(); // Enable all levels by default
+  }
+
+  ~Logger() {
+    if (reportStream_.is_open()) reportStream_.close();
   }
 
   bool enabled_;
@@ -107,17 +117,32 @@ private:
   std::unordered_set<std::string> blockedTags_;
   LogCallback logCallback_;
 
+  // REPORT mode support
+  bool reportEnabled_;
+  // User callback: receives a null-terminated log line (including newline), or nullptr if disabled
+  using LogReportCallback = void(*)(const char* message);
+  LogReportCallback reportCallback_ = nullptr;
+
   // Private logging implementation
   void logInternal(const char *tag, Level level, const char *format,
                    va_list args) {
     char messageBuffer[LOG_BUFFER_SIZE];
     processFormat(messageBuffer, sizeof(messageBuffer), format, args);
 
-    char timestampBuffer[32];
-    const char *timestamp = "";
+    char logLine[LOG_BUFFER_SIZE];
+    int written = 0;
     if (timestampEnabled_) {
-      snprintf(timestampBuffer, sizeof(timestampBuffer), "[%lu] ", millis());
-      timestamp = timestampBuffer;
+      written += snprintf(logLine + written, sizeof(logLine) - written, "[%lu] ", millis());
+    }
+    if (tag) {
+      written += snprintf(logLine + written, sizeof(logLine) - written, "[%s] ", tag);
+    }
+    written += snprintf(logLine + written, sizeof(logLine) - written, "%s: %s\n", logLevelToString(level), messageBuffer);
+    logLine[LOG_BUFFER_SIZE-1] = '\0'; // Guarantee null-termination
+
+    // MCU-agnostic file logging via callback
+    if (reportEnabled_ && reportCallback_) {
+      reportCallback_(logLine);
     }
 
     const char *colorCode;
@@ -244,6 +269,22 @@ private:
 
   Logger(const Logger &) = delete;
   Logger &operator=(const Logger &) = delete;
+
+public:
+  /**
+   * Enable MCU-agnostic file/report logging.
+   * @param cb User callback, called with each null-terminated log line (including newline). Pass nullptr to disable.
+   */
+  void enableReport(LogReportCallback cb) {
+    reportEnabled_ = (cb != nullptr);
+    reportCallback_ = cb;
+  }
+  void disableReport() {
+    reportEnabled_ = false;
+    reportCallback_ = nullptr;
+  }
+  bool isReportEnabled() const { return reportEnabled_ && reportCallback_ != nullptr; }
+  LogReportCallback getReportCallback() const { return reportCallback_; }
 };
 
 // Wrapper functions
@@ -346,6 +387,31 @@ static inline void ENABLE_TIMESTAMPS() {
 }
 static inline void DISABLE_TIMESTAMPS() {
   Logger::getInstance().disableTimestamps();
+}
+// MCU-agnostic REPORT mode API
+/**
+ * User callback type for report logging: void my_writer(const char* message)
+ * message is a null-terminated log line (including newline)
+ */
+using LogReportCallback = Logger::LogReportCallback;
+/**
+ * Enable report/file logging. Pass your MCU storage writer as callback.
+ * Example: LOG::ENABLE_REPORT(my_writer);
+ */
+static inline void ENABLE_REPORT(LogReportCallback cb) {
+  Logger::getInstance().enableReport(cb);
+}
+/** Disable report/file logging. */
+static inline void DISABLE_REPORT() {
+  Logger::getInstance().disableReport();
+}
+/** Returns true if report logging is enabled. */
+static inline bool IS_REPORT_ENABLED() {
+  return Logger::getInstance().isReportEnabled();
+}
+/** Returns the current report callback, or nullptr if disabled. */
+static inline LogReportCallback REPORT_CALLBACK() {
+  return Logger::getInstance().getReportCallback();
 }
 
 } // namespace LOG
