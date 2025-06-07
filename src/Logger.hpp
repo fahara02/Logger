@@ -47,17 +47,8 @@ class Logger
     void setOutputCallback(OutputCallback cb) { outputCallback_ = cb; }
     OutputCallback getOutputCallback() const { return outputCallback_; }
 
-    // Timestamp callback: returns milliseconds (user must provide for MCU/PC agnosticism)
-    using TimestampCallback = unsigned long (*)();
     void setTimestampCallback(TimestampCallback cb) { timestampCallback_ = cb; }
     TimestampCallback getTimestampCallback() const { return timestampCallback_; }
-
-    static inline void SETUP(OutputCallback cb) { Logger::getInstance().setOutputCallback(cb); }
-    // Wrapper for timestamp callback setup
-    static inline void SETUP_TIMESTAMP(TimestampCallback cb)
-    {
-        Logger::getInstance().setTimestampCallback(cb);
-    }
 
     // Core logging method
     void vlog(const char* tag, Level level, const char* format, va_list args)
@@ -116,8 +107,10 @@ class Logger
     bool enabled_;
     bool infoColorToggle_;
     const char* infoAlternateColor_;
-    bool timestampEnabled_;
     Level minimumLevel_;
+    bool timestampEnabled_;
+    bool reportEnabled_;
+
     std::bitset<6> enabledLevels_;
     std::array<const char*, 6> levelColors_;
     std::unordered_set<std::string> blockedTags_;
@@ -275,8 +268,6 @@ class Logger
         va_end(argsCopy);
         vsnprintf(buffer, bufferSize, modifiedFormat, args);
     }
-
-    buffer[pos] = '\0';
 
     static const char* logLevelToString(Level level)
     {
@@ -448,6 +439,11 @@ static inline bool IS_REPORT_ENABLED() { return Logger::getInstance().isReportEn
 static inline LogReportCallback REPORT_CALLBACK()
 {
     return Logger::getInstance().getReportCallback();
+}
+static inline void SETUP(Logger::OutputCallback cb) { Logger::getInstance().setOutputCallback(cb); }
+static inline void SETUP_TIMESTAMP(Logger::TimestampCallback cb)
+{
+    Logger::getInstance().setTimestampCallback(cb);
 }
 
 } // namespace LOG
