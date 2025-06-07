@@ -19,7 +19,7 @@ namespace LOG {
 static constexpr uint16_t LOG_BUFFER_SIZE = LOG_REPORT_BUFFER_SIZE;
 enum class Level {
   DEBUG = 0, // Lowest priority (most verbose)
-  TEST = 1,
+  TRACE = 1,
   INFO = 2,
   SUCCESS = 3,
   WARNING = 4,
@@ -113,7 +113,7 @@ private:
         timestampEnabled_(false), reportEnabled_(false), reportFilePath_("report.log"),
         levelColors_{
           "\033[1;37m", // DEBUG: bright white
-          "\033[1;35m", // TEST: bright magenta
+          "\033[1;35m", // TRACE: bright magenta
           "\033[1;36m", // INFO: bright cyan
           "\033[1;32m", // SUCCESS: bright green
           "\033[1;33m", // WARNING: bright yellow
@@ -257,19 +257,8 @@ private:
     vsnprintf(buffer, bufferSize, modifiedFormat, args);
   }
 
-  const char *logLevelToString(Level level) {
-    switch (level) {
-    case Level::DEBUG:
-      return "DEBUG";
-    case Level::TEST:
-      return "TEST";
-    case Level::INFO:
-      return "INFO";
-    case Level::SUCCESS:
-      return "SUCCESS";
-    case Level::WARNING:
-      return "WARNING";
-    case Level::ERROR:
+  buffer[pos] = '\0';
+}
       return "ERROR";
     default:
       return "UNKNOWN";
@@ -310,16 +299,16 @@ static inline void DEBUG(const char *format, ...) {
   va_end(args);
 }
 
-static inline void TEST(const char *tag, const char *format, ...) {
+static inline void TRACE(const char *tag, const char *format, ...) {
   va_list args;
   va_start(args, format);
-  Logger::getInstance().vlog(tag, Level::TEST, format, args);
+  Logger::getInstance().vlog(tag, Level::TRACE, format, args);
   va_end(args);
 }
-static inline void TEST(const char *format, ...) {
+static inline void TRACE(const char *format, ...) {
   va_list args;
   va_start(args, format);
-  Logger::getInstance().vlog(Level::TEST, format, args);
+  Logger::getInstance().vlog(Level::TRACE, format, args);
   va_end(args);
 }
 
