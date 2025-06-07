@@ -157,8 +157,16 @@ class Logger
         {
             written += snprintf(logLine + written, sizeof(logLine) - written, "[%s] ", tag);
         }
-        written += snprintf(logLine + written, sizeof(logLine) - written, "%s: %s\n",
-                            logLevelToString(level), messageBuffer);
+        const char* color = levelColors_[static_cast<size_t>(level)];
+        if (level == Level::INFO) {
+            if (infoColorToggle_) {
+                color = infoAlternateColor_;
+            }
+            infoColorToggle_ = !infoColorToggle_;
+        }
+        const char* reset = "\033[0m";
+        written += snprintf(logLine + written, sizeof(logLine) - written, "%s%s: %s%s\n",
+                            color, logLevelToString(level), messageBuffer, reset);
         logLine[LOG_BUFFER_SIZE - 1] = '\0'; // Guarantee null-termination
 
         // Output to user callback (ALL logs)

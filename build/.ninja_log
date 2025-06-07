@@ -1,0 +1,5 @@
+# ninja log v6
+13	863	7710062676379821	CMakeFiles/logger_test.dir/test/test.cpp.obj	f065552307245536
+864	979	7710062684890315	test/logger_test.exe	df9699b7d26a960d
+17	771	7710065035150288	CMakeFiles/logger_test.dir/test/test.cpp.obj	f065552307245536
+772	883	7710065042700380	test/logger_test.exe	df9699b7d26a960d
